@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lime Bike Earnings & Goal Calculator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        lime: {
+                            400: '#a3e635',
+                            500: '#84cc16',
+                            600: '#65a30d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .lime-glow {
+            box-shadow: 0 0 20px rgba(132, 204, 22, 0.2);
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-lime-500 text-slate-950 p-2 rounded-xl font-bold flex items-center justify-center shadow-lg shadow-lime-500/20">
+                    <i data-lucide="zap" class="w-6 h-6 fill-current"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg text-white tracking-wide">Lime Earnings Hub</h1>
+                    <p class="text-xs text-slate-400">Task Tracker & Earnings Projections</p>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <nav class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs sm:text-sm font-medium w-full sm:w-auto">
+                <button id="tab-calc" onclick="switchTab('calc')" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg transition text-slate-950 bg-lime-400 font-bold">
+                    Calculator
+                </button>
+                <button id="tab-goals" onclick="switchTab('goals')" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg transition text-slate-400 hover:text-white">
+                    Goal Calculator
+                </button>
+                <button id="tab-history" onclick="switchTab('history')" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg transition text-slate-400 hover:text-white">
+                    Weekly History
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-4xl mx-auto px-4 py-6 w-full flex-grow space-y-6">
+        
+        <!-- TAB 1: CURRENT CALCULATOR -->
+        <div id="view-calc" class="space-y-6">
+            
+            <!-- Summary Dashboard Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden lime-glow">
+                <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-lime-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center md:text-left">
+                    <div>
+                        <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">Gross Earnings</span>
+                        <div class="text-2xl sm:text-3xl font-extrabold text-white mt-1" id="total-gross">$0.00</div>
+                    </div>
+                    <div>
+                        <span class="text-xs uppercase tracking-wider font-semibold text-amber-400">Total Expenses</span>
+                        <div class="text-2xl sm:text-3xl font-extrabold text-amber-400 mt-1" id="total-expenses-display">$0.00</div>
+                    </div>
+                    <div>
+                        <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">Taxable Profit</span>
+                        <div class="text-2xl sm:text-3xl font-extrabold text-slate-200 mt-1" id="total-profit">$0.00</div>
+                    </div>
+                    <div>
+                        <span class="text-xs uppercase tracking-wider font-semibold text-lime-400">True Net Take-Home</span>
+                        <div class="text-2xl sm:text-3xl font-extrabold text-lime-400 mt-1" id="total-net">$0.00</div>
+                    </div>
+                </div>
+
+                <!-- Secondary Summary Row -->
+                <div class="mt-4 pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400">
+                    <div>Estimated Tax Reserve (on Profit): <span class="font-bold text-white" id="total-tax">$0.00</span></div>
+                    <div class="flex items-center gap-2">
+                        <span>Tax Rate Buffer:</span>
+                        <span class="font-bold text-white text-sm" id="tax-rate-label">30%</span>
+                        <input type="range" id="tax-slider" min="0" max="45" value="30" step="1" oninput="updateCalculations()" class="w-32 accent-lime-400 ml-2">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Itemised Expenses Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-amber-500/10 text-amber-400 p-2.5 rounded-xl">
+                            <i data-lucide="receipt" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-white">Itemised Business Expenses</h3>
+                            <p class="text-xs text-slate-400">Add fuel, maintenance, or supplies individually</p>
+                        </div>
+                    </div>
+                    <button onclick="addExpenseRow()" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl text-xs font-semibold transition">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Expense
+                    </button>
+                </div>
+
+                <!-- Expense Rows Container -->
+                <div id="expenses-list" class="space-y-2">
+                    <!-- Dynamic rows inserted here -->
+                </div>
+            </div>
+
+            <!-- Bonus Swap Progress Bar -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                <div class="flex justify-between items-center mb-2">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="award" class="w-5 h-5 text-lime-400"></i>
+                        <span class="font-bold text-sm text-slate-200">Bonus Swap Rate ($3.82 / swap)</span>
+                    </div>
+                    <span id="bonus-status" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-400">
+                        0 / 300 Swaps
+                    </span>
+                </div>
+                <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800">
+                    <div id="bonus-progress-bar" class="bg-lime-400 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p class="text-xs text-slate-400 mt-2" id="bonus-subtext">Complete 300 or more swaps in a week to unlock $3.82 for all swaps!</p>
+            </div>
+
+            <!-- Task Input Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <!-- Swaps Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 class="font-bold text-lg text-white">Battery Swaps</h3>
+                            <p class="text-xs text-slate-400" id="swap-rate-display">$3.64 / task (&lt; $3.82 threshold)</p>
+                        </div>
+                        <span class="font-semibold text-lime-400 text-lg" id="swap-subtotal">$0.00</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-4">
+                        <button onclick="adjustTask('swaps', -10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">-10</button>
+                        <button onclick="adjustTask('swaps', -1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">-1</button>
+                        <input type="number" id="input-swaps" value="0" min="0" oninput="updateCalculations()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center text-lg font-bold text-white focus:outline-none focus:border-lime-400">
+                        <button onclick="adjustTask('swaps', 1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">+1</button>
+                        <button onclick="adjustTask('swaps', 10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">+10</button>
+                    </div>
+                </div>
+
+                <!-- Moves Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 class="font-bold text-lg text-white">Moves</h3>
+                            <p class="text-xs text-slate-400">$5.23 / task</p>
+                        </div>
+                        <span class="font-semibold text-lime-400 text-lg" id="move-subtotal">$0.00</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-4">
+                        <button onclick="adjustTask('moves', -10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">-10</button>
+                        <button onclick="adjustTask('moves', -1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">-1</button>
+                        <input type="number" id="input-moves" value="0" min="0" oninput="updateCalculations()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center text-lg font-bold text-white focus:outline-none focus:border-lime-400">
+                        <button onclick="adjustTask('moves', 1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">+1</button>
+                        <button onclick="adjustTask('moves', 10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">+10</button>
+                    </div>
+                </div>
+
+                <!-- Retrievals Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 class="font-bold text-lg text-white">Retrievals</h3>
+                            <p class="text-xs text-slate-400">$6.59 / task</p>
+                        </div>
+                        <span class="font-semibold text-lime-400 text-lg" id="retrieval-subtotal">$0.00</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-4">
+                        <button onclick="adjustTask('retrievals', -10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">-10</button>
+                        <button onclick="adjustTask('retrievals', -1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">-1</button>
+                        <input type="number" id="input-retrievals" value="0" min="0" oninput="updateCalculations()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center text-lg font-bold text-white focus:outline-none focus:border-lime-400">
+                        <button onclick="adjustTask('retrievals', 1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">+1</button>
+                        <button onclick="adjustTask('retrievals', 10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">+10</button>
+                    </div>
+                </div>
+
+                <!-- Deploy Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 class="font-bold text-lg text-white">Deploys</h3>
+                            <p class="text-xs text-slate-400">$4.00 / task</p>
+                        </div>
+                        <span class="font-semibold text-lime-400 text-lg" id="deploy-subtotal">$0.00</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-4">
+                        <button onclick="adjustTask('deploys', -10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">-10</button>
+                        <button onclick="adjustTask('deploys', -1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">-1</button>
+                        <input type="number" id="input-deploys" value="0" min="0" oninput="updateCalculations()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center text-lg font-bold text-white focus:outline-none focus:border-lime-400">
+                        <button onclick="adjustTask('deploys', 1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">+1</button>
+                        <button onclick="adjustTask('deploys', 10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">+10</button>
+                    </div>
+                </div>
+
+                <!-- Service Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 class="font-bold text-lg text-white">Services</h3>
+                            <p class="text-xs text-slate-400">$5.00 / task</p>
+                        </div>
+                        <span class="font-semibold text-lime-400 text-lg" id="service-subtotal">$0.00</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-4">
+                        <button onclick="adjustTask('services', -10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">-10</button>
+                        <button onclick="adjustTask('services', -1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">-1</button>
+                        <input type="number" id="input-services" value="0" min="0" oninput="updateCalculations()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center text-lg font-bold text-white focus:outline-none focus:border-lime-400">
+                        <button onclick="adjustTask('services', 1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">+1</button>
+                        <button onclick="adjustTask('services', 10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">+10</button>
+                    </div>
+                </div>
+
+                <!-- Tidies Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 class="font-bold text-lg text-white">Tidies</h3>
+                            <p class="text-xs text-slate-400">$2.27 / task</p>
+                        </div>
+                        <span class="font-semibold text-lime-400 text-lg" id="tidy-subtotal">$0.00</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-4">
+                        <button onclick="adjustTask('tidies', -10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">-10</button>
+                        <button onclick="adjustTask('tidies', -1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">-1</button>
+                        <input type="number" id="input-tidies" value="0" min="0" oninput="updateCalculations()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center text-lg font-bold text-white focus:outline-none focus:border-lime-400">
+                        <button onclick="adjustTask('tidies', 1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">+1</button>
+                        <button onclick="adjustTask('tidies', 10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">+10</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Action Toolbar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <button onclick="resetCalculator()" class="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 rounded-xl text-sm font-semibold transition">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset All
+                </button>
+                <button onclick="openSaveModal()" class="flex items-center gap-2 px-5 py-2.5 bg-lime-400 hover:bg-lime-500 text-slate-950 font-bold rounded-xl text-sm shadow-lg shadow-lime-400/20 transition">
+                    <i data-lucide="save" class="w-4 h-4"></i> Save & Log Week
+                </button>
+            </div>
+
+        </div>
+
+        <!-- TAB 2: GOAL CALCULATOR -->
+        <div id="view-goals" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-white">Target Goal Calculator</h2>
+                        <p class="text-xs text-slate-400">Determine task counts needed to hit specific financial targets.</p>
+                    </div>
+                    <div class="flex items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800 w-full sm:w-auto">
+                        <span class="text-xs text-slate-400 pl-2">Target Net ($):</span>
+                        <input type="number" id="goal-target-amount" value="1000" step="50" oninput="calculateGoals()" class="bg-slate-900 border border-slate-800 text-lime-400 font-bold rounded-lg px-3 py-1 text-right w-28 focus:outline-none focus:border-lime-400">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-bold text-white">Swaps Only</span>
+                            <span class="text-xs bg-lime-500/10 text-lime-400 px-2 py-0.5 rounded font-semibold">$3.82 rate</span>
+                        </div>
+                        <div class="text-3xl font-extrabold text-lime-400 my-2" id="goal-swaps-count">374</div>
+                        <p class="text-xs text-slate-400">Tasks needed to reach target net earnings.</p>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-bold text-white">Moves Only</span>
+                            <span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-semibold">$5.23 rate</span>
+                        </div>
+                        <div class="text-3xl font-extrabold text-lime-400 my-2" id="goal-moves-count">274</div>
+                        <p class="text-xs text-slate-400">Tasks needed to reach target net earnings.</p>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-bold text-white">Retrievals Only</span>
+                            <span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-semibold">$6.59 rate</span>
+                        </div>
+                        <div class="text-3xl font-extrabold text-lime-400 my-2" id="goal-retrievals-count">217</div>
+                        <p class="text-xs text-slate-400">Tasks needed to reach target net earnings.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: WEEKLY HISTORY -->
+        <div id="view-history" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-white">Logged Weekly Earnings</h2>
+                        <p class="text-xs text-slate-400">All data is stored directly in your browser's private local storage.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="exportCSV()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div id="history-container" class="space-y-3">
+                    <!-- Dynamic logs inserted here -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Save Modal -->
+    <div id="save-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4">
+            <h3 class="text-lg font-extrabold text-white">Log Current Week Earnings</h3>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Week Ending Date</label>
+                <input type="date" id="modal-date" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-lime-400">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Notes (Optional)</label>
+                <input type="text" id="modal-notes" placeholder="e.g. Good weather, high demand" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-lime-400 text-sm">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeSaveModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold">Cancel</button>
+                <button onclick="confirmSaveWeek()" class="px-4 py-2 bg-lime-400 text-slate-950 font-bold rounded-xl text-xs">Save Week</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const RATES = {
+            swap_std: 3.64,
+            swap_bonus: 3.82,
+            moves: 5.23,
+            retrievals: 6.59,
+            deploys: 4.00,
+            services: 5.00,
+            tidies: 2.27
+        };
+
+        // Itemised Expenses State
+        let expenseItems = [
+            { id: 1, desc: 'Fuel', amount: 0 }
+        ];
+
+        function getTaskCounts() {
+            return {
+                swaps: parseInt(document.getElementById('input-swaps').value) || 0,
+                moves: parseInt(document.getElementById('input-moves').value) || 0,
+                retrievals: parseInt(document.getElementById('input-retrievals').value) || 0,
+                deploys: parseInt(document.getElementById('input-deploys').value) || 0,
+                services: parseInt(document.getElementById('input-services').value) || 0,
+                tidies: parseInt(document.getElementById('input-tidies').value) || 0,
+            };
+        }
+
+        function renderExpenseRows() {
+            const container = document.getElementById('expenses-list');
+            if (expenseItems.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 italic py-2">No expenses added for this week.</p>`;
+                return;
+            }
+
+            container.innerHTML = expenseItems.map((item, index) => `
+                <div class="flex items-center gap-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                    <input type="text" value="${item.desc}" placeholder="Expense description (e.g. Fuel)" oninput="updateExpenseItem(${index}, 'desc', this.value)" class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white flex-grow focus:outline-none focus:border-amber-400">
+                    <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 w-28">
+                        <span class="text-xs text-slate-400">$</span>
+                        <input type="number" value="${item.amount || ''}" placeholder="0.00" min="0" step="0.50" oninput="updateExpenseItem(${index}, 'amount', this.value)" class="bg-transparent text-xs font-bold text-white text-right w-full focus:outline-none">
+                    </div>
+                    <button onclick="removeExpenseRow(${index})" class="p-1.5 text-slate-500 hover:text-red-400 transition">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function addExpenseRow() {
+            expenseItems.push({ id: Date.now(), desc: '', amount: 0 });
+            renderExpenseRows();
+            updateCalculations();
+        }
+
+        function removeExpenseRow(index) {
+            expenseItems.splice(index, 1);
+            renderExpenseRows();
+            updateCalculations();
+        }
+
+        function updateExpenseItem(index, field, value) {
+            if (field === 'amount') {
+                expenseItems[index][field] = parseFloat(value) || 0;
+            } else {
+                expenseItems[index][field] = value;
+            }
+            updateCalculations();
+        }
+
+        function getTotalExpenses() {
+            return expenseItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        }
+
+        function adjustTask(taskKey, amount) {
+            const input = document.getElementById(`input-${taskKey}`);
+            let current = parseInt(input.value) || 0;
+            current = Math.max(0, current + amount);
+            input.value = current;
+            updateCalculations();
+        }
+
+        function updateCalculations() {
+            const tasks = getTaskCounts();
+            const expenses = getTotalExpenses();
+            const taxRate = parseFloat(document.getElementById('tax-slider').value) / 100;
+            document.getElementById('tax-rate-label').innerText = `${Math.round(taxRate * 100)}%`;
+
+            // Swap Rate Bonus threshold check
+            const isBonusUnlocked = tasks.swaps >= 300;
+            const currentSwapRate = isBonusUnlocked ? RATES.swap_bonus : RATES.swap_std;
+
+            // Subtotals
+            const swapSubtotal = tasks.swaps * currentSwapRate;
+            const moveSubtotal = tasks.moves * RATES.moves;
+            const retrievalSubtotal = tasks.retrievals * RATES.retrievals;
+            const deploySubtotal = tasks.deploys * RATES.deploys;
+            const serviceSubtotal = tasks.services * RATES.services;
+            const tidySubtotal = tasks.tidies * RATES.tidies;
+
+            const grossTotal = swapSubtotal + moveSubtotal + retrievalSubtotal + deploySubtotal + serviceSubtotal + tidySubtotal;
+            
+            // Profit & Tax logic
+            const taxableProfit = Math.max(0, grossTotal - expenses);
+            const taxAmount = taxableProfit * taxRate;
+            const netTotal = grossTotal - expenses - taxAmount;
+
+            // UI Updates
+            document.getElementById('total-gross').innerText = `$${grossTotal.toFixed(2)}`;
+            document.getElementById('total-expenses-display').innerText = `$${expenses.toFixed(2)}`;
+            document.getElementById('total-profit').innerText = `$${taxableProfit.toFixed(2)}`;
+            document.getElementById('total-net').innerText = `$${netTotal.toFixed(2)}`;
+            document.getElementById('total-tax').innerText = `$${taxAmount.toFixed(2)}`;
+
+            document.getElementById('swap-subtotal').innerText = `$${swapSubtotal.toFixed(2)}`;
+            document.getElementById('move-subtotal').innerText = `$${moveSubtotal.toFixed(2)}`;
+            document.getElementById('retrieval-subtotal').innerText = `$${retrievalSubtotal.toFixed(2)}`;
+            document.getElementById('deploy-subtotal').innerText = `$${deploySubtotal.toFixed(2)}`;
+            document.getElementById('service-subtotal').innerText = `$${serviceSubtotal.toFixed(2)}`;
+            document.getElementById('tidy-subtotal').innerText = `$${tidySubtotal.toFixed(2)}`;
+
+            // Swap bonus UI
+            const progressBar = document.getElementById('bonus-progress-bar');
+            const progressPct = Math.min(100, (tasks.swaps / 300) * 100);
+            progressBar.style.width = `${progressPct}%`;
+
+            const statusBadge = document.getElementById('bonus-status');
+            const rateDisplay = document.getElementById('swap-rate-display');
+
+            if (isBonusUnlocked) {
+                statusBadge.innerText = `${tasks.swaps} / 300 (Unlocked!)`;
+                statusBadge.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-lime-400/20 text-lime-400';
+                rateDisplay.innerText = '$3.82 / task (Bonus Rate active!)';
+                rateDisplay.className = 'text-xs text-lime-400 font-semibold';
+            } else {
+                statusBadge.innerText = `${tasks.swaps} / 300 Swaps`;
+                statusBadge.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-400';
+                rateDisplay.innerText = '$3.64 / task (< 300 threshold)';
+                rateDisplay.className = 'text-xs text-slate-400';
+            }
+
+            calculateGoals();
+        }
+
+        function calculateGoals() {
+            const targetNet = parseFloat(document.getElementById('goal-target-amount').value) || 0;
+            const taxRate = parseFloat(document.getElementById('tax-slider').value) / 100;
+            const grossNeeded = targetNet / (1 - taxRate);
+
+            const swapsNeeded = Math.ceil(grossNeeded / RATES.swap_bonus);
+            const movesNeeded = Math.ceil(grossNeeded / RATES.moves);
+            const retrievalsNeeded = Math.ceil(grossNeeded / RATES.retrievals);
+
+            document.getElementById('goal-swaps-count').innerText = swapsNeeded;
+            document.getElementById('goal-moves-count').innerText = movesNeeded;
+            document.getElementById('goal-retrievals-count').innerText = retrievalsNeeded;
+        }
+
+        function resetCalculator() {
+            ['swaps', 'moves', 'retrievals', 'deploys', 'services', 'tidies'].forEach(key => {
+                document.getElementById(`input-${key}`).value = 0;
+            });
+            expenseItems = [{ id: 1, desc: 'Fuel', amount: 0 }];
+            renderExpenseRows();
+            updateCalculations();
+        }
+
+        function switchTab(tabKey) {
+            ['calc', 'goals', 'history'].forEach(key => {
+                document.getElementById(`view-${key}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-${key}`);
+                btn.className = 'flex-1 sm:flex-initial px-4 py-2 rounded-lg transition text-slate-400 hover:text-white';
+            });
+
+            document.getElementById(`view-${tabKey}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabKey}`);
+            activeBtn.className = 'flex-1 sm:flex-initial px-4 py-2 rounded-lg transition text-slate-950 bg-lime-400 font-bold';
+
+            if (tabKey === 'history') renderHistory();
+        }
+
+        // Storage Management
+        function getSavedLogs() {
+            return JSON.parse(localStorage.getItem('lime_logs') || '[]');
+        }
+
+        function openSaveModal() {
+            document.getElementById('modal-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('modal-notes').value = '';
+            document.getElementById('save-modal').classList.remove('hidden');
+        }
+
+        function closeSaveModal() {
+            document.getElementById('save-modal').classList.add('hidden');
+        }
+
+        function confirmSaveWeek() {
+            const date = document.getElementById('modal-date').value;
+            const notes = document.getElementById('modal-notes').value;
+            const tasks = getTaskCounts();
+            const expensesList = JSON.parse(JSON.stringify(expenseItems));
+            const expenses = getTotalExpenses();
+            const taxRate = parseFloat(document.getElementById('tax-slider').value) / 100;
+
+            const isBonusUnlocked = tasks.swaps >= 300;
+            const swapRate = isBonusUnlocked ? RATES.swap_bonus : RATES.swap_std;
+
+            const gross = (tasks.swaps * swapRate) + (tasks.moves * RATES.moves) + 
+                          (tasks.retrievals * RATES.retrievals) + (tasks.deploys * RATES.deploys) + 
+                          (tasks.services * RATES.services) + (tasks.tidies * RATES.tidies);
+            
+            const profit = Math.max(0, gross - expenses);
+            const tax = profit * taxRate;
+            const net = gross - expenses - tax;
+
+            const newLog = { id: Date.now(), date, notes, tasks, expensesList, expenses, profit, tax, net };
+            const logs = getSavedLogs();
+            logs.unshift(newLog);
+            localStorage.setItem('lime_logs', JSON.stringify(logs));
+
+            closeSaveModal();
+            switchTab('history');
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            const logs = getSavedLogs();
+
+            if (logs.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">No saved weeks yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = logs.map(log => {
+                const expenseDetails = log.expensesList && log.expensesList.length > 0 
+                    ? log.expensesList.map(e => `${e.desc || 'Expense'}: $${(e.amount || 0).toFixed(2)}`).join(', ')
+                    : `Total Expenses: $${(log.expenses || 0).toFixed(2)}`;
+
+                return `
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                            <div class="font-bold text-white text-sm">${log.date}</div>
+                            <div class="text-xs text-slate-400 mt-0.5">${log.notes || 'No notes'}</div>
+                            <div class="text-xs text-amber-400 mt-1">Items: ${expenseDetails} | Profit: $${(log.profit || 0).toFixed(2)}</div>
+                        </div>
+                        <div class="text-right w-full sm:w-auto">
+                            <div class="font-extrabold text-lime-400">$${log.net.toFixed(2)} True Net</div>
+                            <div class="text-xs text-slate-400">$${log.gross.toFixed(2)} Gross</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function exportCSV() {
+            const logs = getSavedLogs();
+            if (logs.length === 0) return alert('No logs to export.');
+
+            let csv = 'Date,Notes,Swaps,Moves,Retrievals,Deploys,Services,Tidies,Gross,ExpensesBreakdown,TotalExpenses,TaxableProfit,TaxWithheld,TrueNet\n';
+            logs.forEach(l => {
+                const expSummary = l.expensesList ? l.expensesList.map(e => `${e.desc}: $${e.amount}`).join(' | ') : '';
+                csv += `${l.date},"${l.notes || ''}",${l.tasks.swaps},${l.tasks.moves},${l.tasks.retrievals},${l.tasks.deploys},${l.tasks.services},${l.tasks.tidies},${l.gross.toFixed(2)},"${expSummary}",${(l.expenses || 0).toFixed(2)},${(l.profit || 0).toFixed(2)},${l.tax.toFixed(2)},${l.net.toFixed(2)}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Lime_Earnings_History_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        // Initialize icons and initial state
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderExpenseRows();
+            updateCalculations();
+        });
+    </script>
+</body>
+</html>
